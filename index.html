@@ -1,74 +1,127 @@
-import React, { useRef, useEffect } from "react";
-
-const Particles = () => {
-  const canvasRef = useRef(null);
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext("2d");
-
-    let particles = [];
-    let animationId;
-
-    const resize = () => {
-      const dpr = window.devicePixelRatio || 1;
-      canvas.width = window.innerWidth * dpr;
-      canvas.height = window.innerHeight * dpr;
-      ctx.scale(dpr, dpr);
-    };
-
-    resize();
-    window.addEventListener("resize", resize);
-
-    for (let i = 0; i < 80; i++) {
-      particles.push({
-        x: Math.random() * window.innerWidth,
-        y: Math.random() * window.innerHeight,
-        r: Math.random() * 2,
-        dx: Math.random() - 0.5,
-        dy: Math.random() - 0.5
-      });
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <title>لعبة أسئلة دينية</title>
+  <style>
+    body {
+      font-family: Arial;
+      text-align: center;
+      background: #f4f4f4;
+      padding: 20px;
     }
+    .container {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      width: 350px;
+      margin: auto;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    button {
+      display: block;
+      margin: 8px auto;
+      padding: 10px;
+      width: 100%;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
 
-    const animate = () => {
-      ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+<div class="container">
+  <h2>🕌 لعبة أسئلة دينية</h2>
+  <p id="question"></p>
+  <div id="answers"></div>
+  <p>النقاط: <span id="score">0</span></p>
+  <p>السؤال: <span id="qNumber">0</span></p>
+</div>
 
-      ctx.fillStyle = "rgba(255,255,255,0.5)";
+<script>
+let questions = [
+  { q: "كم عدد أركان الإسلام؟", a: ["3","5","6","7"], correct: 1 },
+  { q: "كم عدد أركان الإيمان؟", a: ["5","6","7","8"], correct: 1 },
+  { q: "ما هي أول سورة في القرآن؟", a: ["البقرة","الفاتحة","الإخلاص","الناس"], correct: 1 },
+  { q: "كم عدد الصلوات المفروضة؟", a: ["3","4","5","6"], correct: 2 },
+  { q: "ما هو شهر الصيام؟", a: ["رمضان","شوال","محرم","رجب"], correct: 0 },
+  { q: "ما اسم بيت الله؟", a: ["المسجد النبوي","الكعبة","الأقصى","الحرم"], correct: 1 },
+  { q: "من أول نبي؟", a: ["نوح","آدم","إبراهيم","موسى"], correct: 1 },
+  { q: "من خاتم الأنبياء؟", a: ["عيسى","موسى","محمد","إبراهيم"], correct: 2 },
+  { q: "كم عدد سور القرآن؟", a: ["112","113","114","115"], correct: 2 },
+  { q: "كم عدد أجزاء القرآن؟", a: ["20","25","30","40"], correct: 2 },
+  { q: "ما قبلة المسلمين؟", a: ["القدس","مكة","المدينة","دمشق"], correct: 1 },
+  { q: "كم ركعة الفجر؟", a: ["1","2","3","4"], correct: 1 },
+  { q: "كم ركعة المغرب؟", a: ["2","3","4","5"], correct: 1 },
+  { q: "كم ركعة العشاء؟", a: ["2","3","4","5"], correct: 2 },
+  { q: "من أول من أسلم من الرجال؟", a: ["عمر","عثمان","أبو بكر","علي"], correct: 2 },
+  { q: "من أول من أسلم من النساء؟", a: ["عائشة","فاطمة","خديجة","حفصة"], correct: 2 },
+  { q: "في أي غار نزل الوحي؟", a: ["حراء","ثور","أحد","عرفات"], correct: 0 },
+  { q: "من الملك الموكل بالوحي؟", a: ["جبريل","ميكائيل","إسرافيل","مالك"], correct: 0 },
+  { q: "ما نسبة زكاة المال؟", a: ["1%","2.5%","5%","10%"], correct: 1 },
+  { q: "ما اسم صلاة الليل؟", a: ["الضحى","التهجد","العيد","الكسوف"], correct: 1 },
 
-      particles.forEach(p => {
-        p.x += p.dx;
-        p.y += p.dy;
+  // إضافات أكثر
+  { q: "من النبي الذي ابتلعه الحوت؟", a: ["يونس","يوسف","أيوب","إلياس"], correct: 0 },
+  { q: "من النبي الذي شق البحر؟", a: ["إبراهيم","موسى","عيسى","نوح"], correct: 1 },
+  { q: "كم عدد السجدات في كل ركعة؟", a: ["1","2","3","4"], correct: 1 },
+  { q: "ما أول ما يحاسب عليه العبد؟", a: ["الصلاة","الصيام","الزكاة","الحج"], correct: 0 },
+  { q: "ما اسم الكتاب الذي نزل على موسى؟", a: ["القرآن","التوراة","الإنجيل","الزبور"], correct: 1 },
+  { q: "ما اسم الكتاب الذي نزل على عيسى؟", a: ["القرآن","التوراة","الإنجيل","الزبور"], correct: 2 },
+  { q: "ما اسم الكتاب الذي نزل على داوود؟", a: ["القرآن","التوراة","الإنجيل","الزبور"], correct: 3 },
+  { q: "كم عدد الركعات في صلاة الجمعة؟", a: ["2","4","3","5"], correct: 0 },
+  { q: "ما يوم عرفة؟", a: ["يوم صيام","يوم حج","يوم عيد","يوم راحة"], correct: 1 },
+  { q: "كم عدد تكبيرات صلاة العيد في الركعة الأولى؟", a: ["5","7","3","9"], correct: 1 },
+  { q: "من هو أبو الأنبياء؟", a: ["إبراهيم","نوح","موسى","عيسى"], correct: 0 },
+  { q: "ما هي أطول سورة؟", a: ["البقرة","آل عمران","النساء","المائدة"], correct: 0 },
+  { q: "ما هي أقصر سورة؟", a: ["الكوثر","الإخلاص","الفلق","الناس"], correct: 0 },
+  { q: "كم عدد آيات سورة الفاتحة؟", a: ["5","6","7","8"], correct: 2 }
+];
 
-        if (p.x < 0 || p.x > window.innerWidth) p.dx *= -1;
-        if (p.y < 0 || p.y > window.innerHeight) p.dy *= -1;
+let current = 0;
+let score = 0;
 
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fill();
-      });
+const questionEl = document.getElementById("question");
+const answersEl = document.getElementById("answers");
+const scoreEl = document.getElementById("score");
+const qNumberEl = document.getElementById("qNumber");
 
-      animationId = requestAnimationFrame(animate);
-    };
+function loadQuestion() {
+  if (current >= questions.length) {
+    questionEl.innerHTML = "🎉 انتهت اللعبة!";
+    answersEl.innerHTML = "";
+    return;
+  }
 
-    animate();
+  const q = questions[current];
+  questionEl.innerHTML = q.q;
+  answersEl.innerHTML = "";
+  qNumberEl.innerText = current + 1;
 
-    return () => {
-      cancelAnimationFrame(animationId);
-      window.removeEventListener("resize", resize);
-    };
-  }, []);
+  q.a.forEach((answer, index) => {
+    const btn = document.createElement("button");
+    btn.innerText = answer;
+    btn.onclick = () => checkAnswer(index);
+    answersEl.appendChild(btn);
+  });
+}
 
-  return (
-    <canvas
-      ref={canvasRef}
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        zIndex: -1
-      }}
-    />
-  );
-};
+function checkAnswer(index) {
+  const q = questions[current];
 
-export default Particles;
+  if (index === q.correct) {
+    score++;
+    alert("✅ صحيح!");
+  } else {
+    alert("❌ خطأ!");
+  }
+
+  scoreEl.innerText = score;
+  current++;
+  loadQuestion();
+}
+
+loadQuestion();
+</script>
+
+</body>
+</html>
