@@ -1,0 +1,302 @@
+import React, { useState, useRef, useEffect } from "react";
+import { motion, useScroll, useTransform, useMotionValue, useSpring } from "framer-motion";
+
+// Particle Background
+const Particles = () => {
+  const canvasRef = useRef(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+    let particles = [];
+    let animationId;
+
+    const resize = () => {
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = window.innerWidth * dpr;
+      canvas.height = window.innerHeight * dpr;
+      ctx.scale(dpr, dpr);
+    };
+
+    resize();
+    window.addEventListener("resize", resize);
+
+    for (let i = 0; i < 80; i++) {
+      particles.push({
+        x: Math.random() * window.innerWidth,
+        y: Math.random() * window.innerHeight,
+        r: Math.random() * 2,
+        dx: Math.random() - 0.5,
+        dy: Math.random() - 0.5
+      });
+    }
+
+    const animate = () => {
+      ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+      ctx.fillStyle = "rgba(255,255,255,0.5)";
+
+      particles.forEach(p => {
+        p.x += p.dx;
+        p.y += p.dy;
+
+        if (p.x < 0 || p.x > window.innerWidth) p.dx *= -1;
+        if (p.y < 0 || p.y > window.innerHeight) p.dy *= -1;
+
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      animationId = requestAnimationFrame(animate);
+    };
+
+    animate();
+
+    return <canvas ref={canvasRef} className="fixed inset-0 z-0 opacity-30" />;() => {
+      cancelAnimationFrame(animationId);
+      window.removeEventListener("resize", resize);
+    };
+  }, []);
+
+  return <canvas ref={canvasRef} className="fixed inset-0 z-0 opacity-30" />;
+};
+
+export default function App() {
+  const { scrollYProgress } = useScroll();
+  const yBg = useTransform(scrollYProgress, [0, 1], [0, -400]);
+
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  const rotateX = useSpring(useTransform(y, [-0.5, 0.5], [25, -25]));
+  const rotateY = useSpring(useTransform(x, [-0.5, 0.5], [-25, 25]));
+
+  const handleMouseMove = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const xPos = (e.clientX - rect.left) / rect.width - 0.5;
+    const yPos = (e.clientY - rect.top) / rect.height - 0.5;
+    x.set(xPos);
+    y.set(yPos);
+  };
+
+  const [darkMode, setDarkMode] = useState(true);
+
+  const galleryImages = [
+    "https://lh3.googleusercontent.com/gps-cs-s/AHVAwerQDZayw_NYsLMRh6I7pzZlgwt7BhVtkQFKpbG6qGupvHbihs74qdmOJHG4k0xwBSpcaIdmK24yVDGU78j0yPWrfgj5QYNo0-INHKugDkQHroQVSfaSF5sDlEpqscbv-j_pnN0Y=w172-h224-p-k-no",
+    "https://lh3.googleusercontent.com/gps-cs-s/AHVAwep9PGmMh3WUNcNrIwyIl35sfW7B_YzmRBPifXUfiH4eWkTVEJJYkZK9-22tVapFtG8kV3-_wnxV-WXW4VNIsbnDlLAFVFnCUWsE7W_vV-fI65hKgOdwXC-wvgyIgGaUK1lGlVb2tw=w172-h224-p-k-no",
+    "https://lh3.googleusercontent.com/gps-cs-s/AHVAweokzVzETb__3FJ_QqbVpa8ZA48nhiEUQpq5Sma4whxDgPU7GzZ-NbsR8-6F7ioxAT3OUXMb9VQ93dpDy9Zn9yT3mdCHN8vJIvBkICzz3RtPi-Io5QlqywuE04kR42hYzeiG8RmNEw=w172-h224-p-k-no"
+  ];
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    alert("Message sent!");
+  };
+
+  return (
+    <div className={darkMode ? "bg-black text-white" : "bg-white text-black"}>
+      <Particles />
+
+      {/* NAVBAR */}
+      <nav className="fixed w-full z-50 backdrop-blur-2xl bg-black/60 border-b border-white/10">
+        <div className="max-w-7xl mx-auto flex justify-between items-center p-5">
+          <h1 className="text-2xl font-bold tracking-widest text-orange-400">The Canopy 18</h1>
+
+          <div className="hidden md:flex gap-8 text-sm text-neutral-300">
+            <a href="#about">About</a>
+            <a href="#gallery">Gallery</a>
+            <a href="#reviews">Reviews</a>
+                        <a href="#form">Contact</a>
+          </div>
+
+          <button
+            onClick={() => setDarkMode(!darkMode)}
+            className="px-4 py-2 border rounded-lg"
+            aria-label="Toggle dark mode"
+          >
+            Mode
+          </button>
+        </div>
+      </nav>
+
+      {/* HERO */}
+      <section
+        className="h-screen relative flex items-center justify-center overflow-hidden"
+        onMouseMove={handleMouseMove}
+        style={{ perspective: 1000 }}
+      >
+        <motion.div style={{ y: yBg }} className="absolute inset-0">
+          <video autoPlay loop muted className="w-full h-full object-cover opacity-60">
+            <source src="https://www.w3schools.com/howto/rain.mp4" type="video/mp4" />
+          </video>
+        </motion.div>
+
+        <div className="absolute inset-0 bg-gradient-to-b from-black/80 via-black/60 to-black" />
+
+        <motion.div style={{ rotateX, rotateY }} className="relative text-center max-w-4xl transform-gpu">
+          <h2 className="text-6xl md:text-8xl font-extrabold mb-6">
+            Luxury BBQ <span className="text-orange-400">Experience</span>
+          </h2>
+          <p className="text-neutral-300 mb-10">
+            Immersive dining with motion and cinematic atmosphere.
+          </p>
+          <a href="#gallery" className="bg-orange-500 px-10 py-4 rounded-xl shadow-2xl hover:scale-110 transition">
+            Explore
+          </a>
+        </motion.div>
+      </section>
+
+      {/* ABOUT */}
+      <section id="about" className="py-40 px-6 relative">
+        <div className="max-w-6xl mx-auto text-center">
+          <h3 className="text-6xl font-extrabold mb-10 text-orange-400 tracking-wide">
+            About The Canopy 18
+          </h3>
+
+          <p className="text-neutral-300 leading-9 text-lg max-w-3xl mx-auto mb-16">
+            At The Canopy 18, we redefine the barbecue experience through a blend of craftsmanship, ambiance, and precision. 
+            Every detail — from the slow-smoking process to the presentation of each plate — is designed to deliver a refined dining journey.
+            We focus on premium ingredients, bold flavors, and a consistent standard of excellence that sets us apart.
+          </p>
+
+          <div className="grid md:grid-cols-3 gap-10">
+            <div className="p-8 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xl hover:scale-105 transition">
+              <h4 className="text-xl font-semibold mb-3 text-orange-400">Craftsmanship</h4>
+              <p className="text-neutral-400 text-sm">
+                Each dish is carefully prepared using time-honored smoking techniques combined with modern culinary precision.
+              </p>
+            </div>
+
+            <div className="p-8 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xl hover:scale-105 transition">
+              <h4 className="text-xl font-semibold mb-3 text-orange-400">Premium Ingredients</h4>
+              <p className="text-neutral-400 text-sm">
+                We source high-quality meats and fresh ingredients to ensure rich flavor, tenderness, and consistency in every bite.
+              </p>
+            </div>
+
+            <div className="p-8 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xl hover:scale-105 transition">
+              <h4 className="text-xl font-semibold mb-3 text-orange-400">Elevated Experience</h4>
+              <p className="text-neutral-400 text-sm">
+                From atmosphere to service, we create a luxury environment designed to make every visit memorable and immersive.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* GALLERY */}
+      <section id="gallery" className="py-32 px-6">
+        <h3 className="text-5xl font-bold text-center mb-20 text-orange-400">Gallery</h3>
+
+        <div className="max-w-6xl mx-auto grid md:grid-cols-3 gap-10">
+          {galleryImages.map((src, i) => (
+            <motion.div
+              key={i}
+              whileHover={{ rotateY: 15, rotateX: 10, scale: 1.1 }}
+              className="rounded-2xl overflow-hidden shadow-2xl border border-white/10 backdrop-blur-xl transform-gpu"
+            >
+              <img src={src} alt={`Gallery ${i}`} className="w-full h-72 object-cover" />
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
+      {/* REVIEWS */}
+      <section id="reviews" className="py-32 px-6 bg-neutral-900">
+        <h3 className="text-5xl font-bold text-center mb-6 text-orange-400">Guest Experiences</h3>
+        <p className="text-center text-neutral-400 max-w-2xl mx-auto mb-20">
+          Hear what our guests say about their experience at The Canopy 18 — where flavor, atmosphere, and service come together.
+        </p>
+
+        <div className="max-w-6xl mx-auto grid md:grid-cols-3 gap-10">
+          {[
+            {
+              name: "Marcus L.",
+              text: "From the moment we walked in, everything felt elevated. The smoked ribs were incredibly tender and full of flavor. Truly a premium dining experience.",
+            },
+            {
+              name: "Samantha R.",
+              text: "The atmosphere is unmatched — modern, clean, and relaxing. The staff was attentive and the food exceeded expectations in every way.",
+            },
+            {
+              name: "Daniel K.",
+              text: "Easily one of the best BBQ spots I've visited. The attention to detail in both presentation and taste makes this place stand out.",
+            },
+          ].map((review, i) => (
+            <motion.div
+              key={i}
+              whileHover={{ rotateX: 8, rotateY: -8, scale: 1.05 }}
+              className="p-8 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 transform-gpu"
+            >
+              <p className="text-neutral-300 mb-6 italic">"{review.text}"</p>
+              <p className="text-orange-400 font-semibold">— {review.name}</p>
+            </motion.div>
+          ))}
+        </div>
+      </section>
+
+      {/* CONTACT FORM */}
+      <section id="form" className="py-32 px-6 bg-neutral-900">
+        <div className="max-w-6xl mx-auto grid md:grid-cols-2 gap-12 items-center">
+          {/* LEFT INFO */}
+          <div>
+            <h3 className="text-5xl font-bold mb-6 text-orange-400">Get In Touch</h3>
+            <p className="text-neutral-400 mb-8 leading-8">
+              We’d love to hear from you. Whether you’re planning a visit, hosting an event, or simply have a question,
+              our team is here to assist you with a premium experience from start to finish.
+            </p>
+
+            <div className="space-y-4 text-neutral-300">
+              <p>📍 3074 18th Ave S, St. Petersburg, FL</p>
+              <p>📞 Call us: +1 727-202-8740</p>
+              <p></p>
+              <p>⏰ Open daily (check hours before visiting)</p>
+            </div>
+
+            <div className="mt-10 p-6 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xl">
+              <p className="text-sm text-neutral-400">
+                “Experience matters as much as flavor — and we make sure both exceed expectations.”
+              </p>
+            </div>
+          </div>
+
+          {/* FORM */}
+          <div className="p-8 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-xl">
+            <h4 className="text-2xl font-semibold mb-6 text-orange-400">Send a Message</h4>
+
+            <form className="grid gap-5">
+              <input
+                required
+                className="p-4 rounded-xl bg-black/40 border border-white/10 focus:outline-none focus:border-orange-400"
+                placeholder="Your Name"
+              />
+
+              <input
+                required
+                type="email"
+                className="p-4 rounded-xl bg-black/40 border border-white/10 focus:outline-none focus:border-orange-400"
+                placeholder="Your Email"
+              />
+
+              <textarea
+                required
+                className="p-4 rounded-xl bg-black/40 border border-white/10 h-32 focus:outline-none focus:border-orange-400"
+                placeholder="Your Message"
+              />
+
+              <button
+                type="submit"
+                className="bg-orange-500 py-3 rounded-xl font-semibold hover:scale-105 transition shadow-lg"
+              >
+                Send Message
+              </button>
+            </form>
+          </div>
+        </div>
+      </section>
+
+      {/* FOOTER */}
+      <footer className="py-10 text-center text-neutral-500">
+        © {new Date().getFullYear()} The Canopy 18
+      </footer>
+    </div>
+  );
+}
